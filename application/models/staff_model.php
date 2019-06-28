@@ -6,7 +6,7 @@ class Staff_model extends CI_Model{
 	//login() accepts the username and password, searches the database for match and if found, returns the 
 	//query result else returns false
 	function login($username, $password){
-	   $this -> db -> select('*');
+	   $this -> db -> select('user.*');
 	   $this -> db -> from('user');
 	   $this -> db -> where('username', $username);
 	   $this -> db -> where('password', MD5($password));
@@ -30,15 +30,19 @@ class Staff_model extends CI_Model{
 		->where('user_function_link.user_id',$user_id)
                 ->where('user_function_link.active','1');
 		$query=$this->db->get();
+		
 		return $query->result();
 	}
 	
 	//user_hospital() takes user ID as parameter and returns a list of all the hospitals the user has access to.	
-	function user_hospital($user_id){
-		$this->db->select('hospital.hospital_id,hospital,description,place,district,state,logo')->from('user')
+	function user_hospital($user_id = false){
+		if(!!$user_id)
+			$this->db->where('user_hospital_link.user_id',$user_id);
+		$this->db->select('hospital.hospital_id,hospital,hospital_short_name,description,place,district,state,logo')->from('user')
 		->join('user_hospital_link','user.user_id=user_hospital_link.user_id')
-		->join('hospital','user_hospital_link.hospital_id=hospital.hospital_id')
-		->where('user_hospital_link.user_id',$user_id);
+		->join('hospital','user_hospital_link.hospital_id=hospital.hospital_id')	
+		->group_by('hospital.hospital_id')			
+		->order_by('hospital');
 		$query=$this->db->get();
 		return $query->result();
 	}
@@ -51,23 +55,60 @@ class Staff_model extends CI_Model{
 		$query=$this->db->get();
 		return $query->result();
 	}
+	//physical_address() takes no parameters; returns a list of all the physcial addresses and the functions they have access to.
+	function physical_address(){
+		$this->db->select('user_function, physical_address')->from('physical_function_link')
+		->join('user_function','physical_function_link.function_id=user_function.user_function_id');
+		$query=$this->db->get();
+		return $query->result();
+	}
 	
 	//get_department() selects the clinical departments from the database and returns the result
 	function get_department($clinical=1){
-		$this->db->select("department_id,department")->from("department")->where('clinical',$clinical)->order_by('department');
+		$hospital=$this->session->userdata('hospital');
+		if(!!$hospital){
+			$this->db->where('hospital_id',$hospital['hospital_id']);
+		}		
+		if($clinical != -1){
+			$this->db->where('clinical',$clinical);
+		}
+		$this->db->select("hospital_id,department_id,department")->from("department")->order_by('department');
+		$query=$this->db->get();
+		return $query->result();
+	}
+	function get_areas(){
+		$hospital=$this->session->userdata('hospital');
+		if(!!$hospital){
+			$this->db->where('hospital_id',$hospital['hospital_id']);
+		}
+		$this->db->select("department.hospital_id,department.department, area.*")
+					->from("area")
+					->join("department","department.department_id = area.department_id","left")
+					->order_by('department');
+		$query=$this->db->get();
+		return $query->result();
+	}
+	//get_department() selects the clinical departments from the database and returns the result
+	function get_list_department(){
+		$hospital=$this->session->userdata('hospital');
+		$this->db->select("list_department_id,department")->from("list_department")->order_by('department');
 		$query=$this->db->get();
 		return $query->result();
 	}
 	
 	//get_area() selects the areas from the database and returns the result
 	function get_area(){
-		$this->db->select("area_id,department_id,area_name")->from("area");
+		$hospital=$this->session->userdata('hospital');
+		$this->db->where('hospital_id',$hospital['hospital_id']);
+		$this->db->select("area_id,area.department_id,area_name")->from("area")->join('department','area.department_id = department.department_id');
 		$query=$this->db->get();
 		return $query->result();
 	}
 	//get_unit() selects the units from the database and returns the result
 	function get_unit(){
-		$this->db->select("department_id,unit_id,unit_name")->from("unit");
+		$hospital=$this->session->userdata('hospital');
+		$this->db->where('hospital_id',$hospital['hospital_id']);
+		$this->db->select("unit.department_id,unit_id,unit_name")->from("unit")->join('department','unit.department_id = department.department_id');
 		$query=$this->db->get();
 		return $query->result();
 	}
@@ -110,15 +151,50 @@ class Staff_model extends CI_Model{
 		return $query->result();
 	}
 	//get_staff() selects the staff details from the database and returns the result
-	function get_staff(){
-		$this->db->select("staff_id,CONCAT(IF(first_name!='',first_name,''),' ',IF(last_name!='',last_name,'')) staff_name,department",false)
+	function get_staff($department=0){
+		if(!!$department)
+			$this->db->where('department',$department);
+		$this->db->select("staff.staff_id,staff.hospital_id,hospital.hospital, staff.designation, 
+			CONCAT(IF(first_name!='',first_name,''),' ',IF(last_name!='',last_name,'')) staff_name,
+			department, user.user_id, user.username, staff.phone, staff.mci_flag, staff.specialisation",
+			false)
 		->from("staff")
-		->join('department','staff.department_id=department.department_id');
+		->join('hospital', 'staff.hospital_id=hospital.hospital_id')
+		->join('department','staff.department_id=department.department_id', 'left')
+		->join('user','staff.staff_id=user.staff_id', 'left');
 		$query=$this->db->get();
+		return $query->result();
+	}
+	function get_transport_log($status=0,$transport_type="p"){
+		if($status=="active") {
+			$this->db->where('end_date_time','0000-00-00 00:00:00');
+		}
+		if($this->input->post('selected_patient')){
+			$this->db->where('visit_id',$this->input->post('selected_patient'));
+		}
+		else if($this->input->post('visit_id')){
+			$this->db->where('visit_id',$this->input->post('visit_id'));
+		}
+		if($transport_type=="np"){
+			$this->db->where('transport_type',2);
+		}
+		else $this->db->where('transport_type',1);
+		$this->db->select("transport.*,fa.area_name from_area, ta.area_name to_area,CONCAT(IF(first_name!='',first_name,''),' ',IF(last_name!='',last_name,'')) transported_by",false)
+		->from("transport")
+		->join('area fa','transport.from_area_id=fa.area_id')
+		->join('area ta','transport.to_area_id=ta.area_id')
+		->join('staff','transport.staff_id=staff.staff_id');
+		$query=$this->db->get();
+		return $query->result();
+	}
+	function get_transport_defaults(){
+		$this->db->select('primary_key,default_value')->from('default_setting')->where_in('primary_key',array('from_area_id','to_area_id','from_department_id','to_department_id'));
+		$query = $this->db->get();
 		return $query->result();
 	}
 	//upload_form() takes the post variables and inserts data into the form and form_layout tables
 	function upload_form(){
+		$hospital = $this->session->userdata('hospital');
 		//storing all the post variables and json variables into local variables.
 		$fields=json_decode($this->input->post('fields'));
 		$form_name=$this->input->post('form_name');
@@ -131,7 +207,8 @@ class Staff_model extends CI_Model{
 			'form_name'=>$form_name,
 			'form_type'=>$form_type,
 			'num_columns'=>$columns,
-			'print_layout_id'=>$print_layout
+			'print_layout_id'=>$print_layout,
+			'hospital_id'=>$hospital['hospital_id']
 		);
 		$this->db->trans_start(); //Transaction starts
 		$this->db->insert('form',$form_data); //Insert the form data array into the "form" table
@@ -169,7 +246,8 @@ class Staff_model extends CI_Model{
 	//get_forms() takes a parameter $form_type, selects the forms with the given form type 
 	//from the database and returns the result
 	function get_forms($form_type){
-		$this->db->select("form_id,form_name")->from("form")->where("form_type",$form_type);
+		$hospital = $this->session->userdata('hospital');
+		$this->db->select("form_id,form_name")->from("form")->where("form_type",$form_type)->where('hospital_id',$hospital['hospital_id']);
 		$query=$this->db->get();
 		return $query->result();
 	}
@@ -249,7 +327,9 @@ class Staff_model extends CI_Model{
 		$userdata=$this->session->userdata('hospital');
 		if($hospital_id==0) $hospital_id=$userdata['hospital_id'];
 		
-		$this->db->select("*")->from("staff")->where("department_id","4")->where("hospital_id",$hospital_id);
+		$this->db->select("*")->from("staff")
+		->join('department','staff.department_id = department.department_id')
+		->where("department","Blood Bank")->where("staff.hospital_id",$hospital_id);
 		$query=$this->db->get();
 		return $query->result();
 	}
@@ -365,14 +445,14 @@ class Staff_model extends CI_Model{
     }
 	
     function get_defaults() {
-		$this->db->select('primary_key, default_value,default_value_text')
-            ->from('default_setting');
+        $this->db->select('primary_key, default_value,default_value_text')
+        ->from('default_setting');
         $query=$this->db->get();
-		$result = $query->result();
-		if($query->num_rows()>0){
-		    return $query->result();
-		}
-		else
+        $result = $query->result();
+        if($query->num_rows()>0){
+            return $query->result();
+        }
+        else
             return false;
     }
 	
@@ -394,7 +474,100 @@ class Staff_model extends CI_Model{
             return false;
     }
 	
+	function get_staff_summary(){
+		if($this->input->post('department_id')){
+			$this->db->where('staff.department_id',$this->input->post('department_id'));
+		}
+		if($this->input->post('area_id')){
+			$this->db->where('staff.area_id',$this->input->post('area_id'));
+		}
+		if($this->input->post('unit_id')){
+			$this->db->where('staff.unit_id',$this->input->post('unit_id'));
+		}
+		if($this->input->post('designation')){
+			$this->db->where('staff.designation',$this->input->post('designation'));
+		}
+		if($this->input->post('staff_category')){
+			$this->db->where('staff.staff_category_id',$this->input->post('staff_category'));
+		}
+		if($this->input->post('gender')){
+			$this->db->where('staff.gender',$this->input->post('gender'));
+		}
+		if($this->input->post('mci_flag')){
+			$this->db->where('staff.mci_flag',$this->input->post('mci_flag'));
+		}
+		if($this->input->post('sub_by')){
+			$sub_by = $this->input->post('sub_by');
+		}
+		else $sub_by = 'area_name';
+		$this->db->select('count(staff_id) count,staff.department_id, staff.area_id, staff.unit_id,
+					department, area_name,unit_name, designation, staff.staff_category_id,staff_category.staff_category')
+		->from('staff')
+		->join('department','staff.department_id = department.department_id','left')
+		->join('area','staff.area_id = area.area_id','left')
+		->join('unit','staff.unit_id = unit.unit_id','left')
+		->join('staff_category','staff.staff_category_id = staff_category.staff_category_id','left')
+		->group_by('staff.department_id,staff.unit_id,staff.area_id,designation,staff.staff_category_id')
+		->order_by("$sub_by,designation,staff_category");
+		$query = $this->db->get();
+		return $query->result();
+	}   
 	
-    		
+	function user_hospital_link() {
+		$user_id = $this->input->post('user_id');
+		$user_hospital = $this->input->post('user_hospital'); 
+		
+		$user_hospital_data = array();
+		foreach($user_hospital as $uh){ 
+			$user_hospital_data[] = array(
+				'user_id'=>$user_id,
+				'hospital_id'=>$uh
+			);
+		}
+		$this->db->insert_batch('user_hospital_link',$user_hospital_data);
+	}
+	
+	function get_user_hospitals() {
+		if(!!$this->input->post('user_id')){
+			$this->db->where('user.user_id',$this->input->post('user_id'));
+		}
+		$this->db->select("user.user_id, user.username, hospital.hospital_id, hospital.hospital,
+					hospital.hospital_short_name")
+				 ->from("user")
+				 ->join("user_hospital_link","user_hospital_link.user_id = user.user_id")
+				 ->join("hospital","hospital.hospital_id = user_hospital_link.hospital_id")
+				 ->order_by('hospital','asc');
+		$query=$this->db->get();
+		return $query->result();
+	}
+
+	function get_user() {
+		$this->db->select("staff.staff_id,staff.hospital_id, staff.designation, 
+		staff.first_name, staff.last_name,
+		user.user_id, user.username, staff.phone")
+			->from("user")
+			->join("staff", "user.staff_id = staff.staff_id");
+		$query=$this->db->get();
+		return $query->result();
+	}
+
+	function get_prescription_frequency(){
+
+		$this->db->select("frequency")
+			->from("prescription_frequency");
+		$query=$this->db->get();
+		return $query->result();
+	}
+
+	function get_staff_details($staff_id=false) {
+		if($staff_id==false)
+			return false;
+		$this->db->select("staff.*")
+			->from("staff")
+			->where('staff_id', $staff_id);
+		$query=$this->db->get();
+		$result = $query->result();
+		return $result[0];
+	}
 }
 ?>

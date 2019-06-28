@@ -1,11 +1,16 @@
-<link rel="stylesheet" href="<?php echo base_url();?>assets/css/metallic.css" >
-<link rel="stylesheet" href="<?php echo base_url();?>assets/css/theme.default.css" >
-<script type="text/javascript" src="<?php echo base_url();?>assets/js/zebra_datepicker.js"></script>
 <link rel="stylesheet" type="text/css" href="<?php echo base_url(); ?>assets/css/selectize.css">
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.mousewheel.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.timeentry.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/moment.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/bootstrap-datetimepicker.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.validate.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/patient_field_validations.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/Chart.min.js"></script>
+<link rel="stylesheet"  type="text/css" href="<?php echo base_url();?>assets/css/bootstrap_datetimepicker.css">
+<link rel="stylesheet"  type="text/css" href="<?php echo base_url();?>assets/css/patient_field_validations.css">
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery-barcode.min.js"></script>
 <style>
-    .obstetric_history_table { 
+    .obstetric_history_table {  
         border-collapse: collapse; 
     }
     .obstetric_history_table tr{
@@ -93,9 +98,8 @@
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.timeentry.min.js"></script>
 <script type="text/javascript">
 $(function(){
-	$(".date").Zebra_DatePicker();
-	$(".time").timeEntry();
-	$("#from_date,#to_date").Zebra_DatePicker();
+//	$(".date").Zebra_DatePicker();
+//	$("#from_date,#to_date").Zebra_DatePicker();
 });
 <!-- Scripts for printing output table -->
 function printDiv(i)
@@ -113,12 +117,14 @@ pri.print();
     $(document).ready(function() {
   $("input:radio[name=mlc_radio]").click(function() {
       if($('input[name=mlc_radio]:checked').val()=='-1'){          
-          $("#mlc_number_manual").prop("disabled", true);
-          $("#ps_name").prop("disabled", true);
-          $("#brought_by").prop("disabled", true);
-          $("#police_intimation").prop("disabled", true);
-          $("#declaration_required").prop("disabled", true);
-          $("#pc_number").prop("disabled", true);
+          $("#mlc_number_manual").prop("readonly", true);
+          $("#ps_name").prop("readonly", true);
+          $("#brought_by").prop("readonly", true);
+          $("#police_intimation").prop("readonly", true);
+          $("#declaration_required").prop("readonly", true);
+          $("#pc_number").prop("readonly", true);
+		  $("#mlc_number").val("not_mlc");
+		  $("#mlc_number").prop("readonly", true);
       }else if($('input[name=mlc_radio]:checked').val()=='1'){          
           $("#mlc_number_manual").prop("disabled", false);
           $("#ps_name").prop("disabled", false);
@@ -126,6 +132,7 @@ pri.print();
           $("#police_intimation").prop("disabled", false);
           $("#declaration_required").prop("disabled", false);
           $("#pc_number").prop("disabled", false);
+		  $("#mlc_number").val("unset");
       }
    });
    
@@ -159,14 +166,28 @@ pri.print();
             '<td><input type="radio" name="alive[]" class="form-control alive" value="1" id="alive" />Alive <input type="radio" name="alive[]" class="form-control alive" value="-1" id="alive" />Dead </td>' +
             '<td><input type="text" name="date_of_death" class="form-control date_of_death" id="date_of_death" style="width:150px" /></td>'+
             '<td><input type="text" name="cause_of_death[]" class="form-control cause_of_death" id="cause_of_death" placeholder="Cause of death" /></td>';
-    $(".edd_date"+counter.toString()).Zebra_DatePicker();
-    $('#obstetric_history').append(newRow);    
+ //   $(".edd_date"+counter.toString()).Zebra_DatePicker();
+ //   $('#obstetric_history').append(newRow);    
     counter++;
     document.getElementById('child_count') = counter;
     
    });
+   
+		$("#transfer_area").chained("#transfer_department");
+		$("#from_area").chained("#from_department");
+		$("#to_area").chained("#to_department");
 });
 </script>
+<?php 
+	function drug_available($drug, $drugs_available){
+		foreach($drugs_available as $drg){
+			if($drg->generic_item_id == $drug->generic_item_id){
+				return true;
+			}
+		}
+		return false;
+	}	
+?>
 <!-- $("#remove_obstetric_history").click(function(){
        alert('In remove');
        var rowCount = $("#obstetric_history").rows.length;
@@ -201,6 +222,7 @@ pri.print();
 		<td>
 			<?php echo form_open('register/update_patients',array('role'=>'form','id'=>'select_patient_'.$p->visit_id));?>
 			<input type="text" class="sr-only" hidden value="<?php echo $p->visit_id;?>" form="select_patient_<?php echo $p->visit_id;?>" name="selected_patient" />
+			<input type="text" class="sr-only" hidden value="<?php echo $p->patient_id;?>" name="patient_id" />
 			</form>
 			<?php echo $i++;?>
 		</td>
@@ -219,10 +241,15 @@ pri.print();
 	<?php } 
 	else if(isset($patients) && count($patients)==1){
             ?>
+<?php if(isset($duplicate)) { ?>
+		<!-- If duplicate IP no is found then it displays the error message -->
+			<div class="alert alert-danger">Entered Patient Manual ID Number already exists.</div>
+<?php } ?>
 	<?php if(isset($msg)) { ?>
 		<div class="alert alert-info"><?php echo $msg;?></div>
 	<?php } ?>
-	<?php echo form_open('register/update_patients',array('class'=>'form-custom','role'=>'form')); ?>
+	<?php echo form_open('register/update_patients',array('class'=>'form-custom','role'=>'form', 'id'=>'update_patients')); ?>
+	<input type="hidden" class="sr-only" value="<?php echo $transaction_id;?>" name="transaction_id" />
 	<div class="panel panel-default">
 	<div class="panel-body">
 	  <!-- Nav tabs -->
@@ -236,10 +263,19 @@ pri.print();
 				} 
 			}
 		?>
-                <?php 
+		<?php 
 			foreach($functions as $f){ 
-				if($f->user_function == "patient_visit") { ?>
+				if($f->user_function == "Update Patients") { ?>
 					<li role="presentation"><a href="#patient_visit" aria-controls="patient_visit" role="tab" data-toggle="tab"><i class="fa fa-user"></i> Patient Visit</a></li>
+				<?php 
+				break;
+				} 
+			}
+		?>
+		<?php 
+			foreach($functions as $f){ 
+				if($f->user_function == "Patient Transport") { ?>
+					<li role="presentation"><a href="#patient_transport" aria-controls="patient_transport" role="tab" data-toggle="tab"><i class="fa fa-user"></i> Patient Transport</a></li>
 				<?php 
 				break;
 				} 
@@ -309,6 +345,15 @@ pri.print();
 				 } 
 			}
 		?>
+		<?php 
+			foreach($functions as $f){ 
+				if($f->user_function == "Discharge" && ($f->add==1 || $f->edit==1)) { ?>
+					<li role="presentation"><a href="#vitals" aria-controls="discharge" role="tab" data-toggle="tab"><span class="glyphicon glyphicon-signal" aria-hidden="true">&nbsp;</span>Vitals Trend</a></li>
+				<?php 
+				break;
+				 } 
+			}
+		?>
 	  </ul>
           <?php
 				$patient = $patients[0];
@@ -331,11 +376,11 @@ pri.print();
                 </div>
 		<iframe id="ifmcontentstoprint" style="height: 0px; width: 0px; position: absolute;display:none"></iframe>
 		<div class="sr-only" id="print-div" style="width:100%;height:100%;"> 
-		<?php $this->load->view('pages/print_layouts/patient_summary');?>
+			<?php $this->load->view('pages/print_layouts/patient_summary');?>
 		</div>
-                <div class="col-md-8">
+                <div class="col-md-8"  >
 			<div class="row alt">
-                            <div class="col-md-4 col-xs-12 col-lg-3">
+                            <div class="col-md-4 col-xs-12 col-lg-3"  style="background: #FFA500;">
                                 <b>Patient ID: <?php echo $patient->patient_id; ?> </b>
                             </div>
 			<div class="col-md-4 col-xs-12 col-lg-4">
@@ -347,40 +392,58 @@ pri.print();
 			</div>
 			</div>
 			<div class="row alt">
+                        <div class="col-md-4 col-xs-12 col-lg-4">
+				<label class="control-label">Patient ID Manual
+				<input type="text" name="patient_id_manual" class="form-control" placeholder="Patient ID Manual" value="<?php if($patient) echo $patient->patient_id_manual;?>" <?php if($f->edit==1 && empty($patient->patient_id_manual)) echo ''; else echo ' readonly'; ?>  style="background: #ADFF2F; font-weight: bold;"/>
+				</label>
+			</div>
 			<div class="col-md-4 col-xs-12 col-lg-4">
 				<label class="control-label">First Name
-				<input type="text" name="first_name" class="form-control" placeholder="First" value="<?php if($patient) echo $patient->first_name;?>" <?php if($f->edit==1 && empty($patient->first_name)) echo ' required'; else echo ' readonly'; ?> />
+				<input type="text" name="first_name" class="form-control" placeholder="First" value="<?php if($patient) echo $patient->first_name;?>" <?php if($f->edit==1 && empty($patient->first_name)) echo ' required'; else echo ' readonly'; ?> style="background: #ADFF2F; font-weight: bold;" />
 				</label>
 			</div>
                         <div class="col-md-4 col-xs-12 col-lg-4">
 				<label class="control-label">Middle Name
-				<input type="text" name="middle_name" class="form-control" placeholder="Middle" value="<?php if($patient) echo $patient->middle_name;?>" <?php if($f->edit==1 && empty($patient->middle_name)) echo ''; else echo ' readonly'; ?> />
+				<input type="text" name="middle_name" class="form-control" placeholder="Middle" value="<?php if($patient) echo $patient->middle_name;?>" <?php if($f->edit==1 && empty($patient->middle_name)) echo ''; else echo ' readonly'; ?> style="background: #ADFF2F; font-weight: bold;" />
 				</label>
 			</div>
 			<div class="col-md-4 col-xs-12 col-lg-4">
 				<label class="control-label">Last Name
-				<input type="text" name="last_name" class="form-control" placeholder="Last" value="<?php  if($patient) echo $patient->last_name;?>" <?php if($f->edit==1 && empty($patient->last_name)) echo ''; else echo ' readonly'; ?>/>
+				<input type="text" name="last_name" class="form-control" placeholder="Last" value="<?php  if($patient) echo $patient->last_name;?>" <?php if($f->edit==1 && empty($patient->last_name)) echo ''; else echo ' readonly'; ?> style="background: #ADFF2F; font-weight: bold;"/>
 				</label>
 			</div>
 			
 			</div>
                         <div class="row alt">
-			<div class="col-md-4 col-xs-4">
-				<label class="control-label"><input type="radio" class="gender" value="M" name="gender" <?php if($patient)  if($patient->gender=="M") echo " checked ";?> <?php if($f->edit==1 && empty($patient->gender)) echo ' required'; else echo ' readonly'; ?> />Male</label>
-				<label class="control-label"><input type="radio" class="gender" value="F" name="gender" <?php if($patient)  if($patient->gender=="F") echo " checked ";?> <?php if($f->edit==1 && empty($patient->gender)) echo ' required'; else echo ' readonly'; ?> />Female</label>
-				<label class="control-label"><input type="radio" class="gender" value="O" name="gender" <?php if($patient)  if($patient->gender=="O") echo " checked ";?> <?php if($f->edit==1 && empty($patient->gender)) echo ' required'; else echo ' readonly'; ?> />Others</label>
+			<div class="col-md-4 col-xs-4" style="background: #ADFF2F; font-weight: bold;" >
+				<?php if(!empty($patient->gender)) { ?> 
+					<label>
+					<?php 
+						if($patient->gender == 'M')
+							echo "Male";
+						else if($patient->gender == 'F')
+							echo "Female";
+						else 
+							echo "Other";
+					?>
+					</label>
+				<?php } else { ?>
+				<label class="control-label"><input type="radio" class="gender" value="M" name="gender" />Male</label>
+				<label class="control-label"><input type="radio" class="gender" value="F" name="gender" />Female</label>
+				<label class="control-label"><input type="radio" class="gender" value="O" name="gender" />Others</label>
+				<?php } ?>
 			</div>			
 			<div class="col-md-6 col-xs-12">
 				<label class="control-label">Age</label>
-				<input type="text" name="age_years" class="form-control" size="1"  value="<?php if($patient)  echo $patient->age_years;?>" <?php if($f->edit==1 && empty($patient->age_years)) echo ''; else echo ' readonly'; ?>/>Y
-				<input type="text" name="age_months" class="form-control" size="1" value="<?php if($patient)  echo $patient->age_months;?>" <?php if($f->edit==1 && empty($patient->age_moths)) echo ''; else echo ' readonly'; ?>/>M
-				<input type="text" name="age_days" class="form-control" size="1"  value="<?php if($patient)  echo $patient->age_days;?>" <?php if($f->edit==1 && empty($patient->age_days)) echo ''; else echo ' readonly'; ?>/>D
+				<input type="text" name="age_years" class="form-control" maxlength="3" size="3"  value="<?php if($patient)  echo $patient->age_years;?>" <?php if($f->edit==1 && empty($patient->age_years)) echo ''; else echo ' readonly'; ?>  style="background: #ADFF2F; font-weight: bold;"/>Y
+				<input type="text" name="age_months" class="form-control" maxlength="2" size="2" value="<?php if($patient)  echo $patient->age_months;?>" <?php if($f->edit==1 && empty($patient->age_moths)) echo ''; else echo ' readonly'; ?>  style="background: #ADFF2F; font-weight: bold;"/>M
+				<input type="text" name="age_days" class="form-control" maxlength="2" size="2"  value="<?php if($patient)  echo $patient->age_days;?>" <?php if($f->edit==1 && empty($patient->age_days)) echo ''; else echo ' readonly'; ?>  style="background: #ADFF2F; font-weight: bold;"/>D
 			</div>			
 			</div>
                     <div class ="row alt">
                         <div class="col-md-12 col-xs-12">
                                 <label class="control-label">Date of Birth</label>
-                                <input type="text" name="dob" class="form-control dob" value="<?php if($patient->dob!='0000-00-00') echo date("d-M-Y",strtotime($patient->dob)); else echo ""; ?>" <?php if($f->edit==1&& empty($patient->dob)) echo ''; else echo ' readonly'; ?> />
+                                <input type="date" name="dob" class="form-control dob" value="<?php if($patient->dob!='0000-00-00') echo date("d-M-Y",strtotime($patient->dob)); else echo ""; ?>" <?php if($f->edit==1&& empty($patient->dob)) echo ''; else echo ' readonly'; ?>  />
                              <!--   <input type="date" name="dob" class="form-control" value="<?php if($patient)  echo $patient->dob;?>" <?php if($f->edit==1 && empty($patient->dob)) echo ''; else echo ' readonly'; ?>/> -->
                         </div>
                     </div>
@@ -640,7 +703,7 @@ pri.print();
                                     foreach($all_departments as $department){
                                         if($department->department_id==$patient->department_id){
                                             echo "<input type='text' id='department' class='form-control' value='$department->department' disabled/>";
-                                            echo "<input type='hidden' name='department' id='department' class='form-control' value='$department->department_id'/>";
+                                            echo "<input type='text' name='department' id='department' class='form-control sr-only' readonly value='$department->department_id'/>";
                                         }
                                     }
                                 }
@@ -715,7 +778,7 @@ pri.print();
                                     foreach($visit_names as $visit_name){
                                         if($visit_name->visit_name_id==$patient->visit_name_id){
                                             echo "<input type='text' id='visit_name' class='form-control' value='$visit_name->visit_name' disabled/>";
-                                            echo "<input type='hidden' name='visit_name_id' id='visit_name' class='form-control' value='$patient->visit_name_id'/>";
+                                            echo "<input type='text' name='visit_name_id' id='visit_name' class='form-control sr-only' value='$patient->visit_name_id'/>";
                                         }
                                     }
                                 }
@@ -723,8 +786,9 @@ pri.print();
                             </div>
                             <div class="col-md-4 col-xs-6">
                                 <label class="control-label">Doctor</label>
+								
                                 <?php if($f->edit==1 && empty($patient->doctor_id)){ ?>
-                                <select name="doctor_id" id="doctor_id" class="form-control doctor">
+                      <!--          <select name="doctor_id" id="doctor_id" class="form-control doctor">
                                     <option value="">--Select--</option>
                                     <?php 
                                     foreach($doctors as $doctor){
@@ -733,7 +797,7 @@ pri.print();
 					echo ">".$doctor->first_name." ".$doctor->last_name."</option>";
                                     }
                                     ?>
-                                </select>
+                                </select> -->
                                 <?php 
                                 }else{
                                     foreach($doctors as $doctor){
@@ -769,7 +833,7 @@ pri.print();
                                      <div class="col-md-4 col-xs-6">
                                          <label class="control-label">Arrival Mode</label>
                                          <?php if($f->edit==1 && empty($patient->arrival_mode)){?>
-                                         <select name="arrival_mode" id="arrival_mode" class="form-control arrival_mode">
+                                  <!--       <select name="arrival_mode" id="arrival_mode" class="form-control arrival_mode">
                                             <option value="">--Select--</option>
                                             <?php 
                                             foreach($arrival_modes as $arrival_mode){
@@ -778,7 +842,7 @@ pri.print();
                                                 echo ">".$arrival_mode->arrival_mode."</option>";
                                             }
                                             ?>
-                                        </select>
+                                        </select> -->
                                          <?php 
                                             }else{
                                                 foreach($arrival_modes as $arrival_mode){
@@ -828,8 +892,7 @@ pri.print();
                                          <tr>
                                              <td><b>Department</b></td>
                                              <td><b>Area</b></td>
-                                             <td><b>Transfer date</b></td>
-                                             <td><b>Transfer time</b></td>
+                                             <td><b>Transfer Date & Time</b></td>
                                          </tr>
                                          <?php
                                             if(isset($transfers) && $transfers!=false){
@@ -857,9 +920,7 @@ pri.print();
                                          </td>
                                          <td>
                                             <?php echo date("d-M-Y",strtotime($transfer->transfer_date)); ?>
-                                         </td>
-                                         <td>
-                                             <?php echo $transfer->transfer_time; ?>
+                                             <?php echo date("g:iA",strtotime($transfer->transfer_time)); ?>
                                          </td>
                                                     <?php
                                                 }
@@ -888,11 +949,8 @@ pri.print();
                                             </select>
                                          </td>
                                          <td>
-                                         <input type="text" name="transfer_date" class="form-control transfer_date" value= '<?php echo date("d-M-Y",strtotime($transfers[sizeof($transfers)-1]->transfer_date));?>' id="transfer_date" style="width:150px" />
+                                         <input type="datetime-local" name="transfer_date" class="form-control transfer_date" value="<?php echo date("d-M-Y g:iA");?>" id="transfer_date" />
                                    
-                                         </td>
-                                         <td>                                      
-                                         <input type="text" name="transfer_time" class="form-control transfer_time" value='<?php echo date('h:ia');?>' id="transfer_time" />
                                          </td>
                                          </tr>
                                      </table>
@@ -903,6 +961,80 @@ pri.print();
                             break;
                         }
                     }
+              ?>
+              <?php 
+                foreach($functions as $f){
+                    if($f->user_function== "Patient Transport"){
+                        ?>
+              <div role="tabpanel" class="tab-pane" id="patient_transport">
+                  <div class="row alt">
+                                <div class="col-md-4 col-xs-6">
+                                    <b>Patient ID: <?php echo $patient->patient_id; ?> </b>
+                                </div>
+                                <div class="col-md-4 col-xs-6">
+                                    <b><?php echo $patient->visit_type; ?> Number: </b><?php echo $patient->hosp_file_no;?>
+                                </div>
+                                <div class="col-md-4 col-xs-6">
+                                    <b><?php if( $patient->visit_type == "IP") echo "Admit Date:"; else echo "Visit Date:";?></b>
+                                    <?php echo date("d-M-Y", strtotime($patient->admit_date)).", ".date("g:ia", strtotime($patient->admit_time));?>
+                                </div>
+                  </div>
+                  <div class="row alt">
+					
+					 <!--Patient transfers-->
+					 <div class="col-md-12 col-xs-12">
+						 <table class="table table-striped table-bordered">
+							 <thead>
+								<th colspan="4">Patient Transport Information</th>
+							 </thead>
+							 <tr>
+								 <td><b>From Area</b></td>
+								 <td><b>To Area</b></td>
+								 <td><b>Transported By</b></td>
+								 <td><b>Transport Start Date & Time</b></td>
+								 <td><b>Transport End Date & Time</b></td>
+							 </tr>
+							 <?php
+								if(isset($transport) && $transport!=false){
+									foreach($transport as $t){
+										?>
+							 <tr>
+							 <td>
+								 <?php 
+										echo $t->from_area;
+								 ?>
+							 </td>            
+							 <td>
+								 <?php 
+										echo $t->to_area;
+								 ?>
+							 </td>      
+							 <td>
+								 <?php 
+										echo $t->transported_by;
+								 ?>
+							 </td>
+							 <td>
+								<?php echo date("d-M-Y",strtotime($t->start_date_time)); ?>
+								 <?php echo date("g:iA",strtotime($t->start_date_time)); ?>
+							 </td>
+							 <td>
+								<?php echo date("d-M-Y",strtotime($t->end_date_time)); ?>
+								 <?php echo date("g:iA",strtotime($t->end_date_time)); ?>
+							 </td>
+							 </tr>
+										<?php
+									}
+								}
+							 ?>
+						 </table>
+					 </div>
+				</div>
+              </div>              
+                        <?php
+                        break;
+                    }
+                }
               ?>
               <?php 
                 foreach($functions as $f){
@@ -924,48 +1056,88 @@ pri.print();
                   <div class="row alt">
                         <div class="col-md-4 col-xs-6">
 				<label class="control-label">MLC</label>
-				<label class="control-label"><input type="radio" value="1" class="mlc" name="mlc_radio" id="mlc_radio" <?php  if($patient->mlc=='1') echo " checked ";?> <?php if($f->edit==1  && $patient->mlc==0) echo ''; else echo ' disabled'; ?> />Yes</label>
-				<label class="control-label"><input type="radio" value="-1" class="mlc" name="mlc_radio" id="mlc_radio" <?php if($patient->mlc=='-1') echo " checked ";?> <?php if($f->edit==1 && $patient->mlc==0) echo ''; else echo ' disabled'; ?> />No</label>
-                             <?php if($patient->mlc!=0) { ?><input type="hidden" value=<?php echo $patient->mlc; ?> name="mlc_radio" /> <?php } ?>
+					<?php if($patient->mlc_number!='not_mlc'){ ?> 
+					<?php if(!empty($patient->mlc_number_manual)){ ?>
+						<label>: Yes</label>
+					<?php  } else {?>
+				<label class="control-label"><input type="radio" value="1" class="mlc" name="mlc_radio" id="mlc_radio" />Yes</label>
+				<label class="control-label"><input type="radio" value="-1" class="mlc" name="mlc_radio" id="mlc_radio"/>No</label>
+					<?php if($patient->mlc!=0) { ?><input type="hidden" value=<?php echo $patient->mlc; ?> name="mlc_radio" /> <?php } } }else{?> 
+						<label class="control-label">: NOT MLC </label>
+					<?php }  ?>
 			
 			</div>
                       <div class="col-md-4 col-xs-6">
                           <label class="control-label">MLC Number- System</label>
-                          <input name="mlc_number" class="form-control mlc" id="mlc_number" value="<?php if(!empty($patient->mlc_number)) echo $patient->mlc_number; else echo "unset"?>" type="text" readonly/>
-                      </div>
+						  <?php if($patient->mlc_number!='not_mlc'){ ?> 
+                          <input name="mlc_number" class="form-control mlc" id="mlc_number" value="<?php if(!empty($patient->mlc_number)) echo $patient->mlc_number; else echo ""?>" type="text" readonly/>
+						  <?php } ?>                       </div>
                         <div class="col-md-4 col-xs-6">
                                 <label class="control-label">MLC Number Manual</label>
-                                <input type="text" name="mlc_number_manual" class="form-control mlc" id="mlc_number_manual" value="<?php if(!empty($patient->mlc_number_manual)) echo $patient->mlc_number_manual; else echo ''; ?>" <?php if($f->edit==1 && ((empty($patient->mlc_number_manual) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?> />
+								<?php if($patient->mlc_number!='not_mlc'){ ?> 
+								<?php if(!empty($patient->mlc_number_manual)) { ?>
+									<label><?php echo $patient->mlc_number_manual; ?></label>
+								<?php } else {?>
+                                <input type="text" name="mlc_number_manual" class="form-control mlc" id="mlc_number_manual" />
+								<?php } }?>
                         </div>
                       
 		</div>
                   <div class="row alt">
                       <div class="col-md-4 col-xs-6">
                                 <label class="control-label">PS Name</label>
-                                <input type="text" name="ps_name" class="form-control mlc" id="ps_name" value="<?php echo $patient->ps_name;?>" <?php if($f->edit==1 && ((empty($patient->ps_name) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?>/>
+								<?php if($patient->mlc_number!='not_mlc'){ ?> 
+								<?php if(!empty($patient->ps_name)) {?> 
+									<label><?php echo ': '.$patient->ps_name; ?> </label>
+								<?php } else { ?>
+                                <input type="text" name="ps_name" class="form-control mlc" id="ps_name"/>
+								<?php } ?>
+								<?php } ?>
                         </div>
                       
                       <div class="col-md-4 col-xs-6">
                           <label class="control-label">Police Intimation</label>
-                          <input type="text" name="police_intimation" class="form-control mlc" id="police_intimation" value="<?php echo $patient->police_intimation;?>" <?php if($f->edit==1 && ((empty($patient->police_intimation) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?> />
+						  <?php if($patient->mlc_number!='not_mlc'){ ?> 
+						  <?php if(!empty($patient->police_intimation) && $patient->police_intimation == 1){ ?> 
+							<label>: Yes</label>
+						  <?php } else {?>
+							<label class="control-label"><input type="radio" value="1" class="mlc" name="police_intimation" id="police_intimation" />Yes</label>
+							<label class="control-label"><input type="radio" value="-1" class="mlc" name="police_intimation" id="police_intimation"/>No</label>
+						  <?php } }?>
                       </div>
                       <div class="col-md-4 col-xs-6">
                           <label class="control-label">PC Number</label>
-                          <input type="text" name="pc_number" class="form-control mlc" id="pc_number" value="<?php echo $patient->pc_number;?>" <?php if($f->edit==1 && ((empty($patient->pc_number) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?> />
+						  <?php if($patient->mlc_number!='not_mlc'){ ?>
+						  <?php if(!empty($patient->pc_number)) {?>
+							<label> <?php echo ': '.$patient->pc_number; ?></label>
+						  <?php } else { ?>
+                          <input type="text" name="pc_number" class="form-control mlc" id="pc_number" />
+						  <?php } } ?>
                       </div>
                   </div>
                   <div class="row alt">
                       <div class="col-md-4 col-xs-6">
                           <label class="control-label">Brought By</label>
-                          <input type="text" name="brought_by" class="form-control mlc" id="brought_by" value="<?php echo $patient->brought_by;?>" <?php if($f->edit==1 && ((empty($patient->brought_by) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?> />
+						  <?php if($patient->mlc_number!='not_mlc'){ ?> 
+							<?php if(!empty($patient->brought_by)) {?>
+							<label><?php echo ': '.$patient->brought_by; ?></label>
+						  <?php } else { ?>
+                          <input type="text" name="brought_by" class="form-control mlc" id="brought_by" />
+						  <?php } } ?>
                       </div>
                       <div class="col-md-4 col-xs-6">
                           <label class="control-label">Declaration Required</label>
-                          <input type="text" name="declaration_required" class="form-control mlc" id="declaration_required" value="<?php echo $patient->declaration_required;?>" <?php if($f->edit==1 && ((empty($patient->declaration_required) && $patient->mlc!='-1') || $patient->mlc==0)) echo ''; else echo ' readonly'; ?> />
+						  <?php if($patient->mlc_number!='not_mlc'){ ?> 
+							<?php if(!empty($patient->declaration_required)){ ?> 
+							<label><?php if($patient->declaration_required == 1) echo ': '.'Yes'; else echo ': '.'No'; ?></label>
+						  <?php } else {?>
+							<label class="control-label"><input type="radio" value="1" class="mlc" name="declaration_required" id="declaration_required" />Yes</label>
+							<label class="control-label"><input type="radio" value="-1" class="mlc" name="declaration_required" id="declaration_required"/>No</label>
+						  <?php } } ?>
                       </div>                                            
                   </div>
               </div>              
-                        <?php
+					<?php 
                         break;
                     }
                 }
@@ -1217,12 +1389,26 @@ pri.print();
 				
 				<div class="col-md-4 col-xs-6">
 					<label class="control-label">Blood Pressure</label>
-					<input type="text" name="sbp" style="width:50px" class="form-control blood_pressure" value="<?php if(!!$patient->sbp) echo $patient->sbp;?>" <?php if($f->edit==1 && empty($patient->sbp)) echo ''; else echo ' readonly'; ?> />/
-					<input type="text" name="dbp"  style="width:50px" class="form-control blood_pressure" value="<?php if(!!$patient->dbp) echo $patient->dbp;?>" <?php if($f->edit==1 && empty($patient->dbp)) echo ''; else echo ' readonly'; ?> />
+					<input maxlength="3" size="3" type="text" name="sbp" style="width:50px" class="form-control blood_pressure" value="<?php if(!!$patient->sbp) echo $patient->sbp;?>" <?php if($f->edit==1 && empty($patient->sbp)) echo ''; else echo ' readonly'; ?> />/
+					<input maxlength="3" size="3" type="text" name="dbp"  style="width:50px" class="form-control blood_pressure" value="<?php if(!!$patient->dbp) echo $patient->dbp;?>" <?php if($f->edit==1 && empty($patient->dbp)) echo ''; else echo ' readonly'; ?> />
 				</div>
 				<div class="col-md-4 col-xs-6">
 					<label class="control-label">Respiratory Rate</label>
 					<input type="text" name="respiratory_rate" class="form-control respiratory_rate" value="<?php if(!!$patient->respiratory_rate) echo $patient->respiratory_rate;?>" <?php if($f->edit==1  && empty($patient->respiratory_rate)) echo ''; else echo ' readonly'; ?> />
+				</div>
+			</div>
+			<div class="row alt">
+				<div class="col-md-4 col-xs-6">
+					<label class="control-label">Blood Sugar</label>
+					<input maxlength="3" size="3" type="text" name="blood_sugar"  style="width:50px" class="form-control blood_sugar" value="<?php if(!!$patient->blood_sugar) echo $patient->blood_sugar;?>" <?php if($f->edit==1 && empty($patient->blood_sugar)) echo ''; else echo ' readonly'; ?> /> mg/dL
+				</div>
+				<div class="col-md-4 col-xs-6">
+					<label class="control-label">Hb</label>
+					<input maxlength="4" size="4" type="text" name="hb"  style="width:50px" class="form-control hb" value="<?php if(!!$patient->hb) echo $patient->hb;?>" <?php if($f->edit==1 && empty($patient->hb)) echo ''; else echo ' readonly'; ?> /> g/dL
+				</div>
+				<div class="col-md-4 col-xs-6">
+					<label class="control-label">HbA1c</label>
+					<input maxlength="3" size="3" type="text" name="hb1ac"  style="width:50px" class="form-control hb1ac" value="<?php if(!!$patient->hb1ac) echo $patient->hb1ac;?>" <?php if($f->edit==1 && empty($patient->hb1ac)) echo ''; else echo ' readonly'; ?> />%
 				</div>
 			</div>
 			<div class="row alt">
@@ -1288,6 +1474,81 @@ pri.print();
 					</label>
 					<textarea name="cns" cols="40" class="form-control" placeholder="CNS" <?php if($f->edit==1 && empty($patient->cns)) echo ''; else echo ' readonly'; ?> ><?php echo $patient->cns;?></textarea>
 				</div>
+			</div>
+			<div class="row alt">
+					<div class="col-md-12 col-xs-12">
+						<?php 
+							if(isset($visit_notes) && !!$visit_notes){ ?>
+						
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th colspan="4">Clinical Notes</th>
+								</tr>
+								<tr>
+									<th>#</th>
+									<th>Date</th>
+									<th>Note</th>
+									<th>Added by</th>
+								</tr>
+							</thead>
+							<tbody>
+							<?php
+							$i=1;
+							 foreach($visit_notes as $note){ ?>
+								<tr>
+									<td><?php echo $i++; ?></td>
+									<td><?php if($note->note_time!=0) echo date("d-M-Y g:iA",strtotime($note->note_time)); ?></td>
+									<td><?php echo $note->clinical_note;?></td>
+									<td><?php echo $note->first_name." ".$note->last_name;?></td>
+								</tr>
+								<?php  } ?>
+							</tbody>
+						</table>
+						<?php
+							}
+						?>
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th colspan="4">Add Clinical Notes</th>
+								</tr>
+								<tr>
+								<th>Note</th>
+								<th>Date & Time</th>
+								<th></th>
+								</tr>
+							</thead>
+							<tbody class="daily_notes">
+								<tr>
+									<td><textarea rows="4" cols="60" name="clinical_note[]"  class="form-control"></textarea></td>
+									<td><input type="datetime-local" class="daily_notes_date form-control" name="note_date[]" /> </td>
+									<td><button  type="button" class="btn btn-sm btn-primary" value="+" id="add_daily_note">+</button></td>
+								</tr>
+							</tbody>
+						</table>
+				</div>
+				<script>
+					$(function(){
+						var i=2;
+		/*				$(".daily_notes_date").Zebra_DatePicker({
+							format:'d-M-Y g:iA'
+						}); */
+						$("#add_daily_note").click(function(){
+							var row = "<tr>"+
+									"<td><textarea rows=\"4\" cols=\"60\" name=\"clinical_note[]\"  class=\"form-control\"></textarea></td>"+
+									"<td><input type=\"text\" class=\"daily_notes_date form-control\" form-control\" name=\"note_date[]\" /> </td>"+
+									"<td></td>"+
+								"</tr>";
+							$('.daily_notes').append(row);
+				/*			$(".daily_notes_date").Zebra_DatePicker({
+								format:'d-M-Y g:iA'
+							}); */
+							i++;
+
+						});
+					});
+				</script>
 			</div>
 		</div>
 		<?php 
@@ -1545,15 +1806,14 @@ pri.print();
                                 </div>
 			<div class="row alt">
 			<div class="col-md-12 alt">
-				<table class="table table-striped table-bordered">
+				<table class="table table-striped table-bordered" id="prescription_table">
 					<thead>
 						<tr>
 						<th rowspan="3" class="text-center">Drug</th>
 						<th rowspan="3" class="text-center">Duration (in Days)</th>
-						<th rowspan="3" class="text-center">Frequency</th>
+					<!--	<th rowspan="3" class="text-center">Frequency</th> -->
 						<th colspan="6" class="text-center">Timings</th>
-						<th rowspan="3" class="text-center">Quantity</th>
-						<th rowspan="3" class="text-center">Unit</th>
+					<!--	<th rowspan="3" class="text-center">Issued Quantity</th> -->
 						</tr>
 						<tr>
 							<th colspan="2" class="text-center">Morning</th>
@@ -1572,59 +1832,59 @@ pri.print();
 					<tbody>
 						<tr class="prescription">
 							<td>
-								<select name="drug_0" class="form-control" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> >
+								<select name="drug_0" style="width:150px;" class="form-control" >
 								<option value="">--Select--</option>
 								<?php 
 								foreach($drugs as $drug){
-									echo "<option value='".$drug->item_id."'>".$drug->item_name."</option>";
+									$available = $drug->generic_name.' - '.$drug->item_form;
+									$style = '';
+									if(drug_available($drug, $drugs_available)){
+										$available .= ' - Available';
+										$style = "style='background: #6DF48F;'";
+									}
+									echo "<option $style value='".$drug->generic_item_id."'>".$available."</option>";
 								}
 								?>
 								</select>
+								<i class="glyphicon glyphicon-pencil"></i>
+								<textarea name="note_0" cols="30" rows="10" hidden></textarea>
 							</td>
 							<td>
 								<input type="text" name="duration_0" placeholder="in Days" style="width:100px" class="form-control" />
 							</td>
-							<td>
-								<select name="frequency_0" class="form-control" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> >
-									<option value="">Select</option>
-									<option value="Daily" selected>Daily</option>
-									<option value="Alternate Days">Alternate Days</option>
+						<!--	<td>
+								<select name="frequency_0" class="form-control" >
+									<?php foreach($prescription_frequency as $freq){ ?>
+										
+										<option value="<?php echo $freq->frequency;?>"><?php echo $freq->frequency;?></option>
+									<?php } ?>
 								</select>
+							</td> -->
+							<td>
+								<label><input type="checkbox" name="bb_0" value="1"  /></label>
 							</td>
 							<td>
-								<label><input type="checkbox" name="bb_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
+								<label><input type="checkbox" name="ab_0" value="1"  /></label>
 							</td>
 							<td>
-								<label><input type="checkbox" name="ab_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
+								<label><input type="checkbox" name="bl_0" value="1" /></label>
 							</td>
 							<td>
-								<label><input type="checkbox" name="bl_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
+								<label><input type="checkbox" name="al_0" value="1" /></label>
 							</td>
 							<td>
-								<label><input type="checkbox" name="al_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
+								<label><input type="checkbox" name="bd_0" value="1" /></label>
 							</td>
 							<td>
-								<label><input type="checkbox" name="bd_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
+								<label><input type="checkbox" name="ad_0" value="1" /></label>
+								<input type="text" name="prescription[]" class="sr-only" value="0"  />
 							</td>
+						<!--	<td>
+								<input type="text" name="quantity_0" style="width:100px" class="form-control" />
+								
+							</td> -->
 							<td>
-								<label><input type="checkbox" name="ad_0" value="1" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> /></label>
-							</td>
-							<td>
-								<input type="text" name="quantity_0" style="width:100px" class="form-control" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> />
-							</td>
-							<td>
-								<select name="lab_unit_0" class="form-control" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> >
-								<option value="">--Select--</option>
-								<?php 
-								foreach($lab_units as $unit){
-									echo "<option value='".$unit->lab_unit_id."'>".$unit->lab_unit."</option>";
-								}
-								?>
-								</select>
-								<input type="text" name="prescription[]" class="sr-only" value="0"  <?php if($f->edit==1) echo ''; else echo ' readonly'; ?> />
-							</td>
-							<td>
-								<button type="button" class="btn btn-primary btn-sm" id="prescription_add" <?php if($f->edit==1) echo ''; else echo ' readonly'; ?>>Add</button>
+								<button type="button" class="btn btn-primary btn-sm" id="prescription_add" >Add</button>
 							</td>
 						</tr>
 					</tbody>
@@ -1638,10 +1898,9 @@ pri.print();
 						<tr>
 						<th rowspan="3" class="text-center">Drug</th>
 						<th rowspan="3" class="text-center">Duration</th>
-						<th rowspan="3" class="text-center">Frequency</th>
+					<!--	<th rowspan="3" class="text-center">Frequency</th> -->
 						<th colspan="6" class="text-center">Timings</th>
-						<th rowspan="3" class="text-center">Quantity</th>
-						<th rowspan="3" class="text-center"></th>
+					<!--	<th rowspan="3" class="text-center">Quantity</th> -->
 						</tr>
 						<tr>
 							<th colspan="2" class="text-center">Morning</th>
@@ -1658,25 +1917,25 @@ pri.print();
 						</tr>
 					</thead>
 					<tbody>
-					<?php foreach($prescription as $pres){ ?>
+					<?php foreach($prescription as $pres){ ?>						
 					<tr>
-						<td><?php echo $pres->item_name;?></td>
+						<td><?php echo $pres->item_name.' - '.$pres->item_form;?><br><?php if($pres->note!='') echo '-'.$pres->note;?></td>
 						<td><?php echo $pres->duration;?></td>
-						<td><?php echo $pres->frequency;?></td>
+					<!--	<td><?php echo $pres->frequency;?></td> -->
 						<td><?php if($pres->morning == 1 || $pres->morning == 3) echo "<i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->morning == 2 || $pres->morning == 3) echo " <i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->afternoon == 1 || $pres->afternoon == 3) echo "<i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->afternoon == 2 || $pres->afternoon == 3) echo "<i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->evening == 1 || $pres->evening == 3) echo "<i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->evening == 2 || $pres->evening == 3) echo "<i class='fa fa-check'></i>";?></td>
-						<td><?php echo $pres->quantity;?> <?php echo $pres->lab_unit;?></td>
-						<td>
+					<!--	<td><?php echo $pres->quantity;?> </td> -->
+					<!--	<td>
 							<?php echo form_open('register/update_patients',array('class'=>'form-custom'));?>
 							<input type="text" class="sr-only" value="<?php echo $pres->prescription_id;?>" name="prescription_id" hidden />
 							<input type="text" class="sr-only" value="<?php echo $pres->visit_id;?>" name="visit_id" hidden />
 							<button type="submit" id="remove_prescription" class="btn btn-danger btn-sm">X</button>
 							</form>
-						</td>
+						</td> -->
 					</tr>
 					<?php } ?>
 					</tbody>
@@ -1709,57 +1968,75 @@ pri.print();
 				<label class="control-label">Outcome</label>
 				</div>
 				<div class="col-md-8">
-				<label><input type="radio" value="Discharge" name="outcome" <?php if(!!$patient->outcome) if($patient->outcome=="Discharge") echo " checked ";?> <?php if($f->edit==1 && empty($patient->outcome)) echo ''; else echo ' readonly'; ?> />Discharge</label>
-				<label><input type="radio" value="LAMA" name="outcome" <?php if(!!$patient->outcome) if($patient->outcome=="LAMA") echo " checked ";?> <?php if($f->edit==1&& empty($patient->outcome)) echo ''; else echo ' readonly'; ?> />LAMA</label>
-				<label><input type="radio" value="Absconded" name="outcome" <?php if(!!$patient->outcome) if($patient->outcome=="Absconded") echo " checked ";?> <?php if($f->edit==1&& empty($patient->outcome)) echo ''; else echo ' readonly'; ?> />Absconded</label>
-				<label><input type="radio" value="Death" name="outcome" <?php if(!!$patient->outcome) if($patient->outcome=="Death") echo " checked ";?> <?php if($f->edit==1&& empty($patient->outcome)) echo ''; else echo ' readonly'; ?> />Death</label>
+				<?php if(!!$patient->outcome) { ?> 
+					<p><?php echo $patient->outcome; ?></p>
+				<?php } else {?>
+				<label><input type="radio" value="Discharge" name="outcome" />Discharge</label>
+				<label><input type="radio" value="LAMA" name="outcome" />LAMA</label>
+				<label><input type="radio" value="Absconded" name="outcome" />Absconded</label>
+				<label><input type="radio" value="Death" name="outcome" />Death</label>
+				<?php } ?>
 				</div>
 			</div>
-			<div class="col-md-12 alt">
-				<div class="col-md-2">
+                            <script>
+				$(function(){
+		/*			$(".ip_file_received").Zebra_DatePicker({
+						direction:[false,'<?php echo date("d-M-Y",strtotime($patient->ip_file_received));?>']
+					}); */
+				});
+                            </script>
+                        <div class="col-md-12 alt">
+						<div class="col-md-2">	<!-- here -->
 				<script>
 				$(function(){
-					$(".outcome_date").Zebra_DatePicker({
-						direction:[false,'<?php echo date("d-M-Y",strtotime($patient->admit_date));?>']
+					<?php if($patient->outcome_date == 0){ ?>
+					$('.outcome_date').datetimepicker({
+						format : "D-MMM-YYYY h:ssA",
+						minDate : "<?php echo date("Y/m/d ",strtotime($patient->admit_date)).date("g:i A",strtotime($patient->admit_time));?>",
+						defaultDate : false
 					});
-				});
-                                $(function(){
-					$(".transfer_date").Zebra_DatePicker({
-                                            direction:['<?php if(isset($transfers) && sizeof($transfers) !=0) echo date("d-M-Y",strtotime($transfers[sizeof($transfers)-1]->transfer_date)); else echo date("d-M-Y",strtotime($patient->admit_date));?>',false]
-                                        });
-				});
-                                $(function(){
-					$(".imp_date").Zebra_DatePicker();
-				});
-                                $(function(){
-					$(".edd_date").Zebra_DatePicker();
-				});
-                                $(function(){
-					$(".date_of_birth").Zebra_DatePicker();
-				});
-                                $(function(){
-					$(".date_of_death").Zebra_DatePicker();
-				});
-                                $(function(){
-					$(".dob").Zebra_DatePicker({
-						direction:[false,'<?php echo date("d-M-Y",strtotime($patient->dob));?>']
-					});
-				});
+					<?php } ?>
+					$(".transfer_date").datetimepicker({
+						format : "D-MMM-YYYY h:ssA",
+                        minDate:'<?php if(isset($transfers) && sizeof($transfers) !=0) echo date("Y/m/d ",strtotime($transfers[sizeof($transfers)-1]->transfer_date)).date("g:i A",strtotime($transfers[sizeof($transfers)-1]->transfer_time)); else echo date("Y/m/d ",strtotime($patient->admit_date)).date("g:i A",strtotime($patient->admit_time));?>',
+						defaultDate : false
+                    });
+					$(".transport_start_date,.transport_end_date").datetimepicker({
+						format : "D-MMM-YYYY h:ssA",
+						defaultDate : false
+                    });
+			//		$(".imp_date").Zebra_DatePicker();
+			//		$(".edd_date").Zebra_DatePicker();
+			//		$(".date_of_birth").Zebra_DatePicker();
+			//		$(".date_of_death").Zebra_DatePicker();
+			//		$(".dob").Zebra_DatePicker({
+			//			direction:[false,'<?php echo date("d-M-Y",strtotime($patient->dob));?>']
+			//		});
                                 $(".transfer_time").timeEntry();
+					$(".time").timeEntry({minTime: new Date(<?php echo date("Y,m,d",strtotime($patient->admit_date)).date(",h,i,s",strtotime($patient->admit_time));?>)});
+				});
 				</script>
-				<label>Outcome Date</label>
+				<label>Outcome Date & Time</label>
+				</div> 
+				<div class="col-md-4">
+				<?php if($patient->outcome_date=='0000-00-00'){ ?>
+				<input type="date" name="outcome_date" class="form-control" />
+				<input type="time" name="outcome_time" class="form-control" />
+				<?php } else { ?>
+					<p><?php echo date("d-M-Y",strtotime($patient->outcome_date)).' '.date("g:iA",strtotime($patient->outcome_time)); ?></p>
+				<?php } ?>
 				</div>
-				<div class="col-md-8">
-				<input type="text" name="outcome_date" class="form-control outcome_date" value="<?php if($patient->outcome_date!=0) echo $patient->outcome_date;?>" <?php if($f->edit==1&& empty($patient->outcome_date)) echo ''; else echo ' readonly'; ?> />
-				</div>
-			</div>
-			<div class="col-md-12 alt">
-				<div class="col-md-2">
-				<label class="control-label">Outcome Time</label>
-				</div>
-				<div class="col-md-8">
-				<input type="text" name="outcome_time" class="form-control time" value="<?php if($patient->outcome_time != '00:00:00') echo $patient->outcome_time;?>" <?php if($f->edit==1&& empty($patient->outcome_time)) echo ''; else echo ' readonly'; ?> />
-				</div>
+                            <div class="col-md-2">
+                                <label class="control-label">Case Sheet Recieved at MRD on </label>
+                            </div>
+                            <div class="col-md-4">
+							<?php if($patient->ip_file_received =='0000-00-00') {?>
+                                <input type="date" name="ip_file_received" class="form-control" />
+							<?php }	else { ?>
+								<p><?php echo date("d-M-Y",strtotime($patient->ip_file_received)); ?></p>
+							<?php } ?>
+                            </div>			
+				
 			</div>
 			<div class="col-md-12 alt ">
 				<div class="col-md-2">
@@ -1790,11 +2067,15 @@ pri.print();
 					<label>ICD Code</label>
 				</div>
 				<div class="col-md-8">
-					<select id="icd_code" class="repositories" placeholder="Search ICD codes" name="icd_code" <?php if($f->edit==1&& empty($patient->icd_10)) echo ''; else echo ' readonly'; ?> >
+				<?php if(!empty($patient->icd_10)){?>
+					<label><?php echo $patient->icd_10." ".$patient->code_title;?></label>
+				 <?php } else {?>
+					<select id="icd_code" class="repositories" placeholder="Search ICD codes" name="icd_code" >
 					<?php if(!!$patient->icd_10){ ?>
-						<option value="<?php echo $patient->icd_10;?>"><?php echo $patient->icd_10;?></option>
+						<option value="<?php echo $patient->icd_10;?>"><?php echo $patient->icd_10." ".$patient->code_title;?></option>
 					<?php } ?>
 					</select>
+				<?php } ?>
 				</div>
 				</div>
 			</div>
@@ -1802,14 +2083,102 @@ pri.print();
 		<?php 
 				break;
 		}} ?>
+		<!-- Insert New Tab here -->
+		<div role="tabpanel" class="tab-pane" id="vitals">
+		<div class="row">
+                                <div class="col-md-4 col-xs-6">
+                                    <b>Patient ID: <?php echo $patient->patient_id; ?> </b>
+                                </div>
+                                <div class="col-md-4 col-xs-6">
+                                    <b><?php echo $patient->visit_type; ?> Number: </b><?php echo $patient->hosp_file_no;?>
+                                </div>
+                                <div class="col-md-4 col-xs-6">
+                                    <b><?php if( $patient->visit_type == "IP") echo "Admit Date:"; else echo "Visit Date:";?></b>
+                                    <?php echo date("d-M-Y", strtotime($patient->admit_date)).", ".date("g:ia", strtotime($patient->admit_time));?>
+                                </div>
+                    </div>
+			<div class="row">
+				<div class="col-md-4">
+					<canvas id="sbp_dbp" width="100" height="100"></canvas>
+				</div>
+				<div class="col-md-4">
+					<canvas id="rbs" width="100" height="100"></canvas>
+				</div>
+				<div class="col-md-4">
+					<canvas id="hb" width="100" height="100"></canvas>
+				</div>				
+			</div>
+			<div class="row">
+			<div class="col-md-12">
+			<table class="table table-striped table-bordered" id="detailed_table" >
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>Date</th>
+						<th>Wt-Kg</th>
+						<th>SBP</th>
+						<th>DBP</th>
+						<th>Pulse</th>
+						<th>RBS</th>
+						<th>Hb</th>
+						<th>HbA1C</th>
+						<th>Doctor</th>
+						<th>Clinical Notes</th>
+						<th>Prescription</th>
+					</tr>
+				</thead>
+				<tbody><!-- tr td -->
+					<?php $i=1; foreach($vitals as $vital){ ?>
+					<tr>
+						<td><?php echo $i; ?></td>
+						<td><?php echo $vital->DATE; ?></td>
+						<td><?php echo $vital->Weight; ?></td>
+						<td><?php echo $vital->SBP; ?></td>
+						<td><?php echo $vital->DBP; ?></td>
+						<td><?php echo $vital->Pulse; ?></td>
+						<td><?php echo $vital->RBS; ?></td>
+						<td><?php echo $vital->Hb; ?></td>
+						<td><?php echo $vital->HbA1C; ?></td>
+						<td><?php echo $vital->Doctor; ?></td>	
+						<td><?php echo $vital->Clinical_Notes; ?></td>		
+						<td><?php echo $vital->Prescription; ?></td>		
+					</tr>
+					<?php $i++; } ?>
+				</tbody>
+				<tfoot><!-- tr td -->
+					
+				</tfoot>
+			</table>
+			</div>
+			</div>			
+		</div>
 	  </div>
 
-			<div class="col-md-12 text-center">
-				<input type="text" name="visit_id" class="sr-only" value="<?php echo $patient->visit_id;?>" hidden readonly />
-				<input type="text" name="patient_id" class="sr-only" value="<?php echo $patient->patient_id;?>" hidden readonly />
-				<button class="btn btn-md btn-primary" value="Update" name="update_patient">Update</button>
-				<button class="btn btn-md btn-warning" value="Print" type="button" onclick="printDiv('print-div')">Print Summary</button>
-			</div>
+	<div class="col-md-4 text-right">
+			<label class="control-label">
+				Signed Consultation? 
+				<?php if(!empty($patient->signed_consultation) && $patient->signed_consultation > 0) { ?>
+					<span class="fa fa-check"></span>
+					<input type="checkbox" class="sr-only" value="1" readonly checked />
+				<?php }
+				else{ ?>
+ 				<input type="checkbox"  class="form-control checkbox-big" name="signed_consultation" value = "1" />
+				<?php } ?>
+			</label><br>
+			<b><?php echo $patient->doctor_name; ?></b>
+			&emsp;
+		</div>
+		<div class="col-md-8">
+		<input type="text" name="visit_id" class="sr-only" value="<?php echo $patient->visit_id;?>" hidden readonly />
+		<input type="text" name="patient_id" class="sr-only" value="<?php echo $patient->patient_id;?>" hidden readonly />
+		<input type="text" name="patient_number" class="sr-only" value="patient_number" hidden readonly />
+		<button class="btn btn-md btn-primary" value="Update" name="update_patient">Update</button>&emsp;
+		<button class="btn btn-md btn-warning" value="Print" type="button" onclick="printDiv('print-div')">Print Summary</button>
+		<?php 
+			$visits = sizeof($patient_visits);
+		?>
+		<button class="btn btn-md btn-warning" value="Print" type="button" onclick="printDiv('print-div-all')">(<?php echo $visits; ?>)-Print Summary All Visits</button>
+	</div>
 	</div>
 	</div>
 	</form>		
@@ -1820,6 +2189,46 @@ pri.print();
 	?>
 	</div>
 	<br/>
+	
+	<?php if(!!isset($previous_visits)){ ?>
+	<div class="container">
+	<table class="table table-bordered table-striped">
+		<thead>
+		<th>Date</th>
+		<th>Hospital</th>
+		<th>Type</th>
+		<th>Number</th>
+		<th>Department</th>
+		<th>Unit/Area</th>
+		<th>Outcome</th>
+		<th>Outcome Date</th>
+		</thead>
+		<tbody>
+		<?php foreach($previous_visits as $visit){ ?>
+			<tr onclick="$('#select_visit_<?php echo $visit->visit_id;?>').submit()" style="cursor:pointer">
+				<td>
+					<?php echo form_open('register/view_patients',array('role'=>'form','id'=>'select_visit_'.$visit->visit_id));?>
+					<input type="text" class="sr-only" hidden value="<?php echo $visit->visit_id;?>" name="selected_patient" />
+					<input type="text" class="sr-only" hidden value="<?php echo $visit->patient_id;?>" name="patient_id" />
+					</form>
+				<?php 
+				if($visit->visit_id == $patient->visit_id) echo "<i class='fa fa-eye'></i> ";?>
+				<?php echo date("d-M-Y",strtotime($visit->admit_date));?>
+				</td>
+				<td><?php echo $visit->hospital;?></td>
+				<td><?php echo $visit->visit_type;?></td>
+				<td><?php echo $visit->hosp_file_no;?></td>
+				<td><?php echo $visit->department;?></td>
+				<td><?php echo $visit->unit_name."/".$visit->area_name;?></td>
+				<td><?php echo $visit->outcome;?></td>
+				<td><?php if($visit->outcome_date!=0) echo date("d-M-Y",strtotime($visit->outcome_date));?></td>
+			</tr>
+		<?php } ?>
+		</tbody>
+	</table>
+	</div>
+<?php } ?>
+<br>
 <div class="col-md-12">
 		<div class="panel panel-default">
 		<div class="panel-heading">
@@ -1830,6 +2239,8 @@ pri.print();
 					<div class="row">
 					<div class="col-md-10">
 						<div class="form-group">
+						<label class="control-label">H4A ID</label>
+						<input type="text" name="search_patient_id" size="5" class="form-control" />
 						<label class="control-label">Year</label>
 						<select class="form-control" name="search_year">
 							<?php 
@@ -1852,10 +2263,10 @@ pri.print();
 						<label class="control-label">IP/OP Number</label>
 						<input type="text" name="search_patient_number" size="5" class="form-control" />
 						</div>
-						<div class="form-group">
+					<!--	<div class="form-group">
 						<label class="control-label">Patient Name</label>
 						<input type="text" name="search_patient_name" class="form-control" />
-						</div>
+						</div> -->
 						<div class="form-group">
 						<label class="control-label">Phone Number</label>
 						<input type="text" name="search_phone" class="form-control" />
@@ -1885,19 +2296,28 @@ pri.print();
 						'	<td>'+
 								'<select name="drug_'+$i+'" class="form-control">'+
 								'<option value="">--Select--</option>'+
-								'<?php foreach($drugs as $drug){ echo '<option value="'.$drug->item_id.'">'.$drug->item_name.'</option>';}?>'+
-								'</select>'+
+								"<?php 
+									foreach($drugs as $drug){ 
+										$available = '';
+									$style = '';
+									if(drug_available($drug, $drugs_available)){
+										$available = '- Available';
+										$style = 'style=\"background: #ADFF2F; font-weight: bold;\"';
+									}
+									echo '<option value=\"'.$drug->generic_item_id.'\"'.' '.$style.'>'.$drug->generic_name.$available.'</option>';
+								}?>" +
+								'</select>'+'<i class="glyphicon glyphicon-pencil"></i>'+'<textarea name="note_'+$i+'" cols="30" rows="10" hidden></textarea>'+
 							'</td>'+
 							'<td>'+
 								'<input type="text" name="duration_'+$i+'" placeholder="in Days" style="width:100px" class="form-control" />'+
 							'</td>'+
-							'<td>'+
+							'<!-- <td>'+
 								'<select name="frequency_'+$i+'" class="form-control">'+
-									'<option value="">Select</option>'+
-									'<option value="Daily" selected>Daily</option>'+
-									'<option value="Alternate Days">Alternate Days</option>'+
+								<?php foreach($prescription_frequency as $freq){ ?>
+									'<option value="<?php echo $freq->frequency;?>"><?php echo $freq->frequency;?></option>'+
+								<?php } ?>
 								'</select>'+
-							'</td>'+
+							'</td> -->'+
 							'<td>'+
 								'<label><input type="checkbox" name="bb_'+$i+'" value="1" /></label>'+
 							'</td>'+
@@ -1916,16 +2336,10 @@ pri.print();
 							'<td>'+
 								'<label><input type="checkbox" name="ad_'+$i+'" value="1" /></label>'+
 							'</td>'+
-							'<td>'+
+							'<!--<td>'+
 								'<input type="text" name="quantity_'+$i+'" style="width:100px" class="form-control" />'+
-							'</td>'+
-							'<td>'+
-								'<select name="lab_unit_'+$i+'" class="form-control">'+
-								'<option value="">--Select--</option>'+
-								'<?php foreach($lab_units as $unit){ echo '"<option value="'.$unit->lab_unit_id.'">'.$unit->lab_unit.'</option>'; }?>'+
-								'</select>'+
-							'<input type="text" name="prescription[]" class="sr-only" value="'+$i+'" /></td>'+
-							'<td>'+
+							'</td>-->'+
+							'<td><input type="text" name="prescription[]" class="sr-only" value="'+$i+'" />'+
 								'<button type="button" class="btn btn-danger btn-sm" onclick="$(this).parent().parent().remove()">X</button>'+
 							'</td>'+
 						'</tr>';
@@ -1962,7 +2376,90 @@ pri.print();
                 callback(res.icd_codes.slice(0, 10));
             }
         });
-    }
+	}
+	});
+	$(document).ready(function(){
+		$('#prescription_table').click(function(event){
+			if($(event.target).hasClass('glyphicon-pencil')){
+				$(event.target).next().removeAttr("hidden");
+			}			
+		});
+		// Goto line no 2144
+		$SBP = '';
+		$DBP = '';
+		$HB = '';
+		$RBS = '';
+		$dates = '';
+		<?php foreach($vitals as $vital){
+			$tmp = $vital->SBP;
+			$SBP .=  !empty($tmp) ? $vital->SBP.',' : 'null,';
+			$tmp = $vital->DBP;
+			$DBP .= !empty($tmp) ? $vital->DBP.',' : 'null,';
+			$tmp = $vital->Hb;
+			$HB .= !empty($tmp) ? $vital->Hb.',' : 'null,';
+			$tmp = $vital->RBS;
+			$RBS .= !empty($tmp) ? $vital->RBS.',' : 'null,';
+			$dates .= "'".$vital->DATE."'".',';
+		} 
+		$SBP = rtrim($SBP, ",");
+		$DBP = rtrim($DBP, ",");
+		$HB = rtrim($HB, ",");
+		$RBS = rtrim($RBS, ",");
+		$dates = rtrim($dates, ",");		
+		?>
+		
+		var sbpdbp = $('#sbp_dbp');
+		var sbp_dbp = new Chart(sbpdbp, {
+    		type: 'line',
+    		data: {
+				datasets: [{
+					label: 'SBP',
+					data: [null, <?php echo $SBP; ?>],
+					borderColor: 'red',
+					fill: false,
+					lineTension: 0
+				}, {
+					label: 'DBP',
+					data: [null, <?php echo $DBP; ?>],
+					// Changes this dataset to become a line
+					borderColor: 'blue',
+					fill: false,
+					lineTension: 0
+				}],
+				labels: ['', <?php echo $dates; ?>]        		
+    		}
+		});
+		var rbs_ctx = $('#rbs');
+		var rbs = new Chart(rbs_ctx, {
+    		type: 'line',
+    		data: {
+				datasets: [{
+					label: 'RBS',
+					data: [0, <?php echo $RBS; ?>],
+					borderColor: 'blue',
+					fill: false,
+					lineTension: 0
+				}],
+				labels: ['',<?php echo $dates; ?>]        		
+    		}
+		});
+		var hb_ctx = $('#hb');
+		var hb = new Chart(hb_ctx, {
+    		type: 'line',
+    		data: {
+				datasets: [{
+					label: 'HB',
+					data: [0, <?php echo $HB; ?>],
+					borderColor: 'red',
+					fill: false,
+					lineTension: 0
+				}],
+				labels: ['',<?php echo $dates; ?>]        		
+    		}
+		});
 	});
 </script>
 	
+<div class="sr-only" id="print-div-all" style="width:100%;height:100%;"> 
+			<?php $this->load->view('pages/print_layouts/patient_summary_all_visits');?>
+</div>

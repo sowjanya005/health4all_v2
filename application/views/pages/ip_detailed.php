@@ -1,10 +1,9 @@
-<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.min.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.ptTimeSelect.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.min.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.widgets.min.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.colsel.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.print.js"></script>
-script type="text/javascript" src="<?php echo base_url();?>assets/js/zebra_datepicker.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/zebra_datepicker.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery-ui.js"></script>
 <link rel="stylesheet" href="<?php echo base_url();?>assets/css/jquery-ui.css">
 <link rel="stylesheet" href="<?php echo base_url();?>assets/css/jquery.ptTimeSelect.css">
@@ -145,6 +144,7 @@ $(document).ready(function(){$("#from_date").datepicker({
 		<th>Sno</th>
 		<th>Admit Date</th>
 		<th>Admit Time</th>
+		<th>Patient ID</th>
 		<th>IP No.</th>
 		<th>Gender</th>
 		<th>Name</th>
@@ -171,6 +171,7 @@ $(document).ready(function(){$("#from_date").datepicker({
 		<td><?php echo $i++;?></td>
 		<td><?php if($s->admit_date!=0) echo date("d-M-Y",strtotime($s->admit_date));?></td>
 		<td><?php if($s->admit_time!=0) echo date("g:iA",strtotime($s->admit_time));?></td>
+		<td><?php echo $s->patient_id;?></td>
 		<td><?php echo $s->hosp_file_no;?></td>
 		<td><?php echo $s->gender;?></td>
 		<td><?php echo $s->name;?></td>

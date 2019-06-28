@@ -154,6 +154,13 @@
 				<div class="panel-body">
 				<div class="alert alert-info">Select fields from the right menu to start creating the form! >></div>
 				<div class="form row" id="sortable">
+                                        <div class="layout-div col-md-4 patient_id_manual">
+						<div class="form-group">
+						<label class="control-label">   Patient ID Manual  </label>
+							<input type="text" name="patient_id_manual" style="width: 170px" class="form-control"/>
+						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
+						</div>
+					</div>
 					<div class="layout-div col-md-4 first_name">
 						<div class="form-group">
 						<label class="control-label">   First Name  </label>
@@ -642,48 +649,6 @@
 						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
 						</div>
 					</div>
-					<div class="layout-div col-md-4 past_history">
-						<div class="form-group">
-						<label class="control-label">Past history</label>
-						<input type="text" name="" class="past_history" class="form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
-					<div class="layout-div col-md-4 admit_weight">
-						<div class="form-group">
-						<label class="control-label">Admit Weight</label>
-						<input type="text" name="" class="admit_weight" class="form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
-					<div class="layout-div col-md-4 pulse_rate">
-						<div class="form-group">
-						<label class="control-label">Pulse Rate</label>
-						<input type="text" name="" class="pulse_rate form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
-					<div class="layout-div col-md-4 respiratory_rate">
-						<div class="form-group">
-						<label class="control-label">Respiratory Rate</label>
-						<input type="text" name="" class="respiratory_rate form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
-					<div class="layout-div col-md-4 temperature">
-						<div class="form-group">
-						<label class="control-label">Temperature</label>
-						<input type="text" name="" class="temperature" class="form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
-					<div class="layout-div col-md-4 blood_pressure">
-						<div class="form-group">
-						<label class="control-label">Blood Pressure</label>
-						<input type="text" name="" class="blood_pressure" class="form-control" />
-						<span class="star" title="Click to toggle mandatory">*<input type="checkbox" value="1" class="mandatory" hidden /></span>
-						</div>
-					</div>
 					<div class="layout-div col-md-4 outcome">
 						<div class="radio ">
 						<label class="control-label">
@@ -806,6 +771,11 @@
 			<strong>Patient Information</strong>
 			  <ul class="nav nav-sidebar">
 			  <!--here we are labelling the field_name on the left side of the form-->
+				<li>  
+					<div class="checkbox">
+						<label><input type="checkbox" value="1" id="patient_id_manual" class="checklist" />Patient ID Manual</label>
+					</div>
+				</li>
 				<li>  
 					<div class="checkbox">
 						<label><input type="checkbox" value="1" id="first_name" class="checklist" />First name</label>

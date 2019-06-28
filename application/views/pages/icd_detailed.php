@@ -5,6 +5,81 @@
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.colsel.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.print.js"></script>
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/zebra_datepicker.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/export_to_excell.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.selectize.js"></script>
+<link rel="stylesheet" type="text/css"href="<?php echo base_url(); ?>assets/css/selectize.css">
+<style type="text/css">
+.selectize-control.repositories .selectize-dropdown>div {
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.selectize-control.repositories .selectize-dropdown .by {
+	font-size: 11px;
+	opacity: 0.8;
+}
+
+.selectize-control.repositories .selectize-dropdown .by::before {
+	content: 'by ';
+}
+
+.selectize-control.repositories .selectize-dropdown .name {
+	font-weight: bold;
+	margin-right: 5px;
+}
+
+.selectize-control.repositories .selectize-dropdown .title {
+	display: block;
+}
+
+.selectize-control.repositories .selectize-dropdown .description {
+	font-size: 12px;
+	display: block;
+	color: #a0a0a0;
+	white-space: nowrap;
+	width: 100%;
+	text-overflow: ellipsis;
+	overflow: hidden;
+}
+
+.selectize-control.repositories .selectize-dropdown .meta {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	font-size: 10px;
+}
+
+.selectize-control.repositories .selectize-dropdown .meta li {
+	margin: 0;
+	padding: 0;
+	display: inline;
+	margin-right: 10px;
+}
+
+.selectize-control.repositories .selectize-dropdown .meta li span {
+	font-weight: bold;
+}
+
+.selectize-control.repositories::before {
+	-moz-transition: opacity 0.2s;
+	-webkit-transition: opacity 0.2s;
+	transition: opacity 0.2s;
+	content: ' ';
+	z-index: 2;
+	position: absolute;
+	display: block;
+	top: 12px;
+	right: 34px;
+	width: 16px;
+	height: 16px;
+	background: url(<?php echo base_url(); ?> assets /images/spinner.gif);
+	background-size: 16px 16px;
+	opacity: 0;
+}
+
+.selectize-control.repositories.loading::before {
+	opacity: 0.4;
+}
+</style>
 <script type="text/javascript">
 $(function(){
 	$("#from_date,#to_date").Zebra_DatePicker();
@@ -14,7 +89,6 @@ $(function(){
 			headerTemplate : '{content} {icon}', // Add icon for jui theme; new in v2.7!
 
 			widgets: [ 'default', 'zebra', 'print', 'stickyHeaders','filter'],
-
 			widgetOptions: {
 
 		  print_title      : 'table',          // this option > caption > table id > "table"
@@ -59,7 +133,64 @@ $(function(){
 		  $('.print').click(function(){
 			$('#table-sort').trigger('printTable');
 		  });
+	
+	
+	$("#icd_block").chained("#icd_chapter");
+  
+	$('#icd_code').selectize({
+    valueField: 'code_title',
+    labelField: 'code_title',
+    searchField: 'code_title',
+    create: false,
+    render: {
+        option: function(item, escape) {
+
+            return '<div>' +
+                '<span class="title">' +
+                    '<span class="icd_code">' + escape(item.code_title) + '</span>' +
+                '</span>' +
+            '</div>';
+        }
+    },
+    load: function(query, callback) {
+        if (!query.length) return callback();
+		$.ajax({
+            url: '<?php echo base_url();?>register/search_icd_codes',
+            type: 'POST',
+			dataType : 'JSON',
+			data : {query:query,block:$("#icd_block").val(),chapter:$("#icd_chapter").val()},
+            error: function(res) {
+                callback();
+            },
+            success: function(res) {
+                callback(res.icd_codes.slice(0, 10));
+            }
+        });
+    }
+	});
 });
+</script>
+<script>
+function fnExcelReport() {
+      //created a variable named tab_text where 
+    var tab_text = '<html xmlns:x="urn:schemas-microsoft-com:office:excel">';
+    //row and columns arrangements
+    tab_text = tab_text + '<head><xml><x:ExcelWorkbook><x:ExcelWorksheets><x:ExcelWorksheet>';
+    tab_text = tab_text + '<x:Name>Excel Sheet</x:Name>';
+
+    tab_text = tab_text + '<x:WorksheetOptions><x:Panes></x:Panes></x:WorksheetOptions></x:ExcelWorksheet>';
+    tab_text = tab_text + '</x:ExcelWorksheets></x:ExcelWorkbook></xml></head><body>';
+
+    tab_text = tab_text + "<table border='100px'>";
+    //id is given which calls the html table
+    tab_text = tab_text + $('#myTable').html();
+    tab_text = tab_text + '</table></body></html>';
+    var data_type = 'data:application/vnd.ms-excel';
+    $('#test').attr('href', data_type + ', ' + encodeURIComponent(tab_text));
+    //downloaded excel sheet name is given here
+    $('#test').attr('download', 'icd_detailed.xls');
+
+}
 </script>
 
 	<?php 
@@ -112,7 +243,46 @@ $(function(){
 					}
 					?>
 					</select>
+					<br />
+					<br />
+					
+					<div class="col-md-12">
+					<div class="col-md-4">
+					<select name="icd_chapter" id="icd_chapter" class="form-control" style="width:300px;" >
+					<option value="">ICD Chapter</option>
+					<?php 
+					foreach($icd_chapters as $v){
+						echo "<option value='".$v->chapter_id."'";
+						if($this->input->post('icd_chapter') && $this->input->post('icd_chapter') == $v->chapter_id) echo " selected ";
+						echo ">".$v->chapter_id." - ".$v->chapter_title."</option>";
+					}
+					?>
+					</select>
+					</div>
+					<div class="col-md-4">
+					<select name="icd_block" id="icd_block" class="form-control" style="width:300px;" >
+					<option value="">ICD Block</option>
+					<?php 
+					foreach($icd_blocks as $v){
+						echo "<option value='".$v->block_id."' class='".$v->chapter_id."' ";
+						if($this->input->post('icd_block') && $this->input->post('icd_block') == $v->block_id) echo " selected ";
+						echo ">".$v->block_id." - ".$v->block_title."</option>";
+					}
+					?>
+					</select>	
+					</div>
+					<div class="col-md-4">
+					<select id="icd_code" class="repositories" style="width:300px;display:inline;" placeholder="Select ICD Code.." name="icd_code" >
+						<?php if($this->input->post('icd_code')) { ?>
+							<option value="<?php echo $this->input->post('icd_code');?>"><?php echo $this->input->post('icd_code');?></option>
+						<?php } ?>
+					</select>	
+					</div>
+					</div>
+					<br />
+					<div class="col-md-4 col-md-offset-3">
 					<input class="btn btn-sm btn-primary" type="submit" value="Submit" />
+					</div>
 		</form>
 	<br />
 	
@@ -121,6 +291,10 @@ $(function(){
 		<button type="button" class="btn btn-default btn-md print">
 		  <span class="glyphicon glyphicon-print"></span> Print
 		</button>
+              <!--created button which converts html table to Excel sheet-->
+        <a href="#" id="test" onClick="javascript:fnExcelReport();">
+            <button type="button" class="btn btn-default btn-md excel">
+                <i class="fa fa-file-excel-o"ara-hidden="true"></i> Export to excel</button></a>
 	<table class="table table-bordered table-striped" id="table-sort">
 	<thead>
 		<th>Sno</th>
@@ -136,6 +310,10 @@ $(function(){
 		<th>Department</th>
 		<th>Unit/ Area</th>
 		<th>MLC Number</th>
+		<th>Outcome</th>
+		<th>Outcome Date & Time</th>
+		<th>ICD Code</th>
+		<th>Final Diagnosis</th>
 	</thead>
 	<tbody>
 	<?php 
@@ -167,6 +345,10 @@ $(function(){
 			?>
 		</td>
 		<td><?php echo $s->mlc_number;?></td>
+		<td><?php echo $s->outcome;?></td>
+		<td><?php if($s->outcome_date!=0) echo date("d-M-Y",strtotime($s->outcome_date))." ".date("g:iA",strtotime($s->outcome_time));?></td>
+		<td><?php echo $s->icd_10;?></td>
+		<td><?php echo $s->final_diagnosis;?></td>
 	</tr>
 	<?php
 	$total_count++;

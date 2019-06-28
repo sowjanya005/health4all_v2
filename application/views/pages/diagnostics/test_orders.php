@@ -7,19 +7,18 @@
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.widgets.min.js"></script>
 
 
-
-
-
-
 <style>
 	.panel-warning{
 		margin:5px 10px;
 		padding:2px 0px;
 	}
+	
+.modal-body,.modal-header{
+	background:#111;
+}
 </style>
 <script>
 	$(function(){	
-		console.log('hello');
 		$(".date").Zebra_DatePicker();
 	})
 </script>
@@ -217,7 +216,7 @@
 					<?php } ?>
 					<?php if($test['text_result']==1){ ?>
 					<div class="col-md-3">
-							<input type='text' id="text_result_<?php echo $test['test_id'];?>" name="text_result_<?php echo $test['test_id'];?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test['test_result_text'];?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test['test_id']?>"></input>
+							<textarea id="text_result_<?php echo $test['test_id'];?>" name="text_result_<?php echo $test['test_id'];?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test['test_result_text'];?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test['test_id']?>"></textarea>
 					</div>
 					<?php } ?>
 			<input type="text" value="<?php echo $test['test_id'];?>" name="test[]" class="sr-only hidden" />
@@ -259,7 +258,7 @@
 					<?php } ?>
 					<?php if($test['text_result']==1){ ?>
 					<div class="col-md-3">
-							<input rows="1" type='text' id="text_result_<?php echo $test['test_id'];?>" name="text_result_<?php echo $test['test_id'];?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test['test_result_text'];?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test['test_id']?>"></input>
+							<textarea id="text_result_<?php echo $test['test_id'];?>" name="text_result_<?php echo $test['test_id'];?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test['test_result_text'];?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test['test_id']?>"></textarea>
 					</div>
 					<?php } ?>
 			<input type="text" value="<?php echo $test['test_id'];?>" name="test[]" class="sr-only hidden" />
@@ -427,9 +426,25 @@
 					<?php } ?>
 					<?php if($test->text_result==1){ ?>
 					<div class="col-md-3">
-							<input rows="1" type='text' id="text_result_<?php echo $test->test_id;?>" name="text_result_<?php echo $test->test_id;?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test->test_result_text;?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test->test_id?>"></input>
+							<textarea id="text_result_<?php echo $test->test_id;?>" name="text_result_<?php echo $test->test_id;?>" class="form-control" form='order_submit' placeholder="Suggestive result" value="<?php echo $test->test_result_text;?>"  <?php echo $readonly;?> list="SuggestiveList<?php echo $test->test_id;?>"></textarea>
 					</div>
 					<?php } ?>
+					
+					<?php if($test->test_area=="Radiology"){
+							if($test->study_id != "") { ?>
+								&nbsp &nbsp <a data-toggle="modal" data-target="#myModal" href="#" ><span  class="glyphicon glyphicon-eye-open" ></span> View Image</a>
+								<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+								  <div class="modal-dialog" role="document" style="width:90%">
+									<div class="modal-content">
+									  <div class="modal-body">
+									  <button type="button" class="close" data-dismiss="modal" style="color:white;opacity:0.8" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+										<object type="text/html" data="http://localhost/dwv/viewers/simplistic/index.php?input=http%3A%2F%2Flocalhost%2F<?php echo $test->filepath;?>" width="100%" height="800px" style="overflow:auto;border:3px ridge #ccc"></object>
+									  </div>
+									</div>
+								  </div>
+								</div>
+					<?php	}
+						} ?>
 			<input type="text" value="<?php echo $test->test_id;?>" name="test[]" class="sr-only hidden" />
 				</div>
 			<?php } ?>
@@ -586,7 +601,7 @@ if(count($orders)>0){ ?>
 	}
 } 
 ?>
-<p><b style="color:red">*</b>Not under NABL</p>
+<!-- <p><b style="color:red">*</b>Not under NABL</p> -->
 </div>
 <script>
 	function removeRow(type,i){

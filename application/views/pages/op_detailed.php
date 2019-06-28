@@ -134,13 +134,14 @@ $(document).ready(function(){$("#from_date").datepicker({
 					<input class="btn btn-sm btn-primary" type="submit" value="Submit" />
 		</form>
 	<br />
-	<?php if(isset($report) && count($report)>0){ ?>
-	
+	<?php if(isset($report) && count($report)>0){ ?>	
 		<button type="button" class="btn btn-default btn-md print">
 		  <span class="glyphicon glyphicon-print"></span> Print
 		</button>
 	<table class="table table-bordered table-striped" id="table-sort">
 	<thead>
+		<th>SNo</th>
+		<th>Patient ID</th>
 		<th>OP No.</th>
 		<th>Date</th>
 		<th>Time</th>
@@ -157,6 +158,7 @@ $(document).ready(function(){$("#from_date").datepicker({
 	<tbody>
 	<?php 
 	$total_count=0;
+	$sno=1;
 	foreach($report as $s){
 		$age="";
 		if(!!$s->age_years) $age.=$s->age_years."Y ";
@@ -165,6 +167,8 @@ $(document).ready(function(){$("#from_date").datepicker({
 		if($s->age_days==0 && $s->age_months==0 && $s->age_years==0) $age.="0D";
 	?>
 	<tr>
+		<td><?php echo $sno++;?></td>
+		<td><?php echo $s->patient_id;?></td>
 		<td><?php echo $s->hosp_file_no;?></td>
 		<td><?php echo date("j M Y", strtotime("$s->admit_date"));?></td>
 		<td><?php echo date("h:i A.", strtotime("$s->admit_time"));?></td>
@@ -172,7 +176,7 @@ $(document).ready(function(){$("#from_date").datepicker({
 		<td><?php echo $s->name;?></td>
 		<td><?php echo $age;?></td>
 		<td><?php echo $s->parent_spouse;?></td>
-		<td><?php echo $s->place;?></td>
+		<td><?php if(!!$s->address && !!$s->place) echo $s->address.", ".$s->place; else echo $s->address." ".$s->place;?></td>
 		<td><?php echo $s->phone;?></td>
 		<td><?php echo $s->department;?></td>
 		<td>

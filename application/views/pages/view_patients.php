@@ -1,11 +1,10 @@
 <link rel="stylesheet" href="<?php echo base_url();?>assets/css/metallic.css" >
 <link rel="stylesheet" href="<?php echo base_url();?>assets/css/theme.default.css" >
 <script type="text/javascript" src="<?php echo base_url();?>assets/js/zebra_datepicker.js"></script>
-	<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.min.js"></script>
-
-	<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.widgets.min.js"></script>
-	<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.colsel.js"></script>
-	<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.print.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.widgets.min.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery.tablesorter.print.js"></script>
+<script type="text/javascript" src="<?php echo base_url();?>assets/js/jquery-barcode.min.js"></script>
 <style>
 	.row{
 		margin-bottom: 1.5em;
@@ -18,6 +17,16 @@
 		background:#eee;
 	}
 </style>
+<?php 
+	function drug_available($drug, $drugs_available){
+		foreach($drugs_available as $drg){
+			if($drg->generic_item_id == $drug->generic_item_id){
+				return true;
+			}
+		}
+		return false;
+	}	
+?>
 <script type="text/javascript">
 $(function(){
 	$("#from_date,#to_date").Zebra_DatePicker();
@@ -96,6 +105,7 @@ pri.print();
 	<table class="table table-bordered table-hover table-striped" id="table-sort">
 	<thead>
 		<th style="text-align:center">#</th>
+		<th style="text-align:center">Hospital</th>
 		<th style="text-align:center">IP/OP No.</th>
 		<th style="text-align:center">Patient</th>
 		<th style="text-align:center">Admit Date</th>
@@ -116,9 +126,11 @@ pri.print();
 		<td>
 			<?php echo form_open('register/view_patients',array('role'=>'form','id'=>'select_patient_'.$p->visit_id));?>
 			<input type="text" class="sr-only" hidden value="<?php echo $p->visit_id;?>" name="selected_patient" />
+			<input type="text" class="sr-only" hidden value="<?php echo $p->patient_id;?>" name="patient_id" />
 			</form>
 			<?php echo $i++;?>
 		</td>
+		<td><?php echo $p->hospital;?></td>
 		<td><?php echo $p->visit_type." #".$p->hosp_file_no;?></td>
 		<td><?php echo $p->first_name." ".$p->last_name." | ".$age." | ".$p->gender;?></td>
 		<td><?php echo date("d-M-Y",strtotime($p->admit_date));?></td>
@@ -340,7 +352,42 @@ pri.print();
 					<?php echo $patient->cns;?>
 				</div>
 			</div>
-		</div>
+			<?php 
+				if(isset($visit_notes) && !!$visit_notes){ ?>
+			<div class="row alt">
+					<div class="col-md-12 col-xs-12">
+						
+						<table class="table table-bordered table-striped">
+							<thead>
+								<tr>
+									<th colspan="4">Clinical Notes</th>
+								</tr>
+								<tr>
+									<th>#</th>
+									<th>Date</th>
+									<th>Note</th>
+									<th>Added by</th>
+								</tr>
+							</thead>
+							<tbody>
+							<?php
+							$i=1;
+							 foreach($visit_notes as $note){ ?>
+								<tr>
+									<td><?php echo $i++; ?></td>
+									<td><?php if($note->note_time!=0) echo date("d-M-Y g:iA",strtotime($note->note_time)); ?></td>
+									<td><?php echo $note->clinical_note;?></td>
+									<td><?php echo $note->first_name." ".$note->last_name;?></td>
+								</tr>
+								<?php  } ?>
+							</tbody>
+						</table>
+				</div>
+			</div>
+				<?php
+					}
+				?>
+			</div>
 		<div role="tabpanel" class="tab-pane" id="diagnostics">
 			
 			<?php 
@@ -418,7 +465,7 @@ pri.print();
 						<tr>
 						<th rowspan="3" class="text-center">Drug</th>
 						<th rowspan="3" class="text-center">Duration</th>
-						<th rowspan="3" class="text-center">Frequency</th>
+					<!--	<th rowspan="3" class="text-center">Frequency</th> -->
 						<th colspan="6" class="text-center">Timings</th>
 						<th rowspan="3" class="text-center">Quantity</th>
 						<th rowspan="3" class="text-center"></th>
@@ -439,10 +486,18 @@ pri.print();
 					</thead>
 					<tbody>
 					<?php foreach($prescription as $pres){ ?>
+						<?php							
+							$available = $pres->item_name.' - '.$pres->item_form;
+							$style = '';
+							if(drug_available($pres, $drugs_available)){
+								$available .= ' - Available';
+								$style = "style='background: #6DF48F;'";
+							}						
+						?>
 					<tr>
-						<td><?php echo $pres->item_name;?></td>
+						<td><?php echo $available;?></td>
 						<td><?php echo $pres->duration;?></td>
-						<td><?php echo $pres->frequency;?></td>
+						<!--<td><?php echo $pres->frequency;?></td>-->
 						<td><?php if($pres->morning == 1 || $pres->morning == 3) echo "<i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->morning == 2 || $pres->morning == 3) echo " <i class='fa fa-check'></i>";?></td>
 						<td><?php if($pres->afternoon == 1 || $pres->afternoon == 3) echo "<i class='fa fa-check'></i>";?></td>
@@ -528,6 +583,10 @@ pri.print();
 	  </div>
 			<div class="col-md-12 text-center">
 				<button class="btn btn-md btn-warning" value="Print" type="button" onclick="printDiv('print-div')">Print Summary</button>
+				<?php 
+			$visits = sizeof($patient_visits);
+		?>
+		<button class="btn btn-md btn-warning" value="Print" type="button" onclick="printDiv('print-div-all')">(<?php echo $visits; ?>)-Print Summary All Visits</button>
 			</div>
 		</div>
 	</div>
@@ -535,6 +594,7 @@ pri.print();
 		<table class="table table-bordered table-striped">
 			<thead>
 			<th>Date</th>
+			<th>Hospital</th>
 			<th>Type</th>
 			<th>Number</th>
 			<th>Department</th>
@@ -548,11 +608,13 @@ pri.print();
 					<td>
 						<?php echo form_open('register/view_patients',array('role'=>'form','id'=>'select_visit_'.$visit->visit_id));?>
 						<input type="text" class="sr-only" hidden value="<?php echo $visit->visit_id;?>" name="selected_patient" />
+						<input type="text" class="sr-only" hidden value="<?php echo $visit->patient_id;?>" name="patient_id" />
 						</form>
 					<?php 
 					if($visit->visit_id == $patient->visit_id) echo "<i class='fa fa-eye'></i> ";?>
 					<?php echo date("d-M-Y",strtotime($visit->admit_date));?>
 					</td>
+					<td><?php echo $visit->hospital;?></td>
 					<td><?php echo $visit->visit_type;?></td>
 					<td><?php echo $visit->hosp_file_no;?></td>
 					<td><?php echo $visit->department;?></td>
@@ -580,6 +642,9 @@ pri.print();
 					<div class="row">
 					<div class="col-md-12 col-xs-12">
 						<div class="form-group">
+
+						<label class="control-label">H4A ID</label>
+						<input type="text" name="search_patient_id" size="5" class="form-control" />
 						<label class="control-label">Year</label>
 						<select class="form-control" name="search_year">
 							<?php 
@@ -602,10 +667,10 @@ pri.print();
 						<label class="control-label">IP/OP Number</label>
 						<input type="text" name="search_patient_number" size="5" class="form-control" />
 						</div>
-						<div class="form-group">
+					<!--	<div class="form-group">
 						<label class="control-label">Patient Name</label>
 						<input type="text" name="search_patient_name" class="form-control" />
-						</div>
+						</div> -->
 						<div class="form-group">
 						<label class="control-label">Phone Number</label>
 						<input type="text" name="search_phone" class="form-control" />
@@ -622,3 +687,15 @@ pri.print();
 		</div>
 	</div>
 	<br />
+
+<script type="text/javascript">
+	$(function(){
+		$("#patient_barcode").barcode(
+			"<?php echo $patient->patient_id;?>",
+			"ean13"
+		);
+	});
+</script>
+<div class="sr-only" id="print-div-all" style="width:100%;height:100%;"> 
+	<?php $this->load->view('pages/print_layouts/patient_summary_all_visits');?>
+</div>
